@@ -19,7 +19,11 @@ class Lander:
         self.screen = screen
         self.surface = pygame.surface.Surface((90, 81), pygame.SRCALPHA)
         self.surface_thrusting = pygame.surface.Surface((90, 81), pygame.SRCALPHA)
-        self.rect = self.surface.get_frect()
+
+        # pygame-ce has Surface.get_frect(); classic pygame typically has get_rect().
+        # Use get_rect() for broad compatibility.
+        self.rect = self.surface.get_rect()
+
         self.rect.centerx = Settings.WINDOW.centerx  # horizontal start position
         self.rect.top = self.rect.height  # vertical start position
 
@@ -225,7 +229,12 @@ class Lander:
             ratio = int(bar_bg.width * self.fuel / self.fuel_initial)
         pygame.draw.rect(self.screen, "green", (bar_bg.left, bar_bg.top, ratio, bar_bg.height))
         if self.thrusting:
-            pygame.draw.rect(self.screen, (255, 140, 0), (bar_bg.left, bar_bg.top, ratio, bar_bg.height), 1)
+            pygame.draw.rect(
+                self.screen,
+                (255, 140, 0),
+                (bar_bg.left, bar_bg.top, ratio, bar_bg.height),
+                1,
+            )
 
     def move(self) -> None:
         """Integrate lander motion for one frame."""
