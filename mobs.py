@@ -8,15 +8,15 @@ from globals import Settings
 class Lander:
     """Lunar lander module with drawing, physics and status display."""
 
-    def __init__(self, window: pygame.window.Window) -> None:
+    def __init__(self, screen: pygame.surface.Surface) -> None:
         """Initialize the lander.
 
         Parameters
         ----------
-        window : pygame.Window
-            Reference to the main game window.
+        screen : pygame.Surface
+            Reference to the main game display surface.
         """
-        self.screen = window.get_surface()
+        self.screen = screen
         self.surface = pygame.surface.Surface((90, 81), pygame.SRCALPHA)
         self.surface_thrusting = pygame.surface.Surface((90, 81), pygame.SRCALPHA)
         self.rect = self.surface.get_frect()
@@ -33,8 +33,6 @@ class Lander:
         self.fuel = self.fuel_initial      # current fuel
         self.fuel_consumption = 20         # fuel consumption per second
         self.ai = False                    # autopilot flag
-
-        self.create_status_window(window)
 
     def create_lander(self) -> None:
         """Draw the base lander graphic (without flame)."""
@@ -119,14 +117,6 @@ class Lander:
             ],
         )
 
-    def create_status_window(self, window: pygame.window.Window) -> None:
-        """Create and position the separate status window."""
-        self.status_window = pygame.Window(size=(300, 140), title="Status")
-        self.status_screen = self.status_window.get_surface()
-        top = window.position[1]
-        left = window.position[0] + Settings.WINDOW.width + 10
-        self.status_window.position = (left, top)
-
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Update the lander state depending on actions and mode.
 
@@ -184,7 +174,7 @@ class Lander:
         self.thrusting = thrusting and self.fuel > 0
 
     def draw(self) -> None:
-        """Draw the lander and its status window."""
+        """Draw the lander and its HUD."""
         if self.thrusting:
             self.screen.blit(self.surface_thrusting, self.rect.topleft)
         else:
@@ -192,17 +182,18 @@ class Lander:
         self.draw_status()
 
     def draw_status(self) -> None:
-        """Update and draw the status window (velocity, fuel, mode)."""
-        if self.ai:
-            self.status_screen.fill("darkgrey")
-        else:
-            self.status_screen.fill("black")
-
+        """Draw a simple status HUD onto the main display surface."""
         # Compute height above ground
         h = -1 * (self.rect.bottom - (Settings.WINDOW.bottom - Settings.HORIZON))
 
-        # Render text
         font = pygame.font.SysFont("Consolas", 14, bold=True)
+
+        # Background panel
+        panel_rect = pygame.rect.Rect(5, 5, 300, 80)
+        panel_color = "darkgrey" if self.ai else "black"
+        pygame.draw.rect(self.screen, panel_color, panel_rect)
+        pygame.draw.rect(self.screen, "grey", panel_rect, 1)
+
         labels = "Max speed (m/s):\nSpeed (m/s):\nHeight (m):"
         values = (
             f"{Settings.SAFE_SPEED_LANDING/Settings.PIXELS_PER_METER:>7.2f}\n"
@@ -213,27 +204,28 @@ class Lander:
         text_labels = font.render(labels, True, "white")
         text_values = font.render(values, True, "white")
 
+        self.screen.blit(text_labels, (10, 10))
+        self.screen.blit(text_values, (235, 10))
+
+        # Mode
         if self.mode == "landed":
-            text_mode = font.render(f"Status: {self.mode}", True, "green")
+            mode_color = "green"
         elif self.mode == "crashed":
-            text_mode = font.render(f"Status: {self.mode}", True, "red")
+            mode_color = "red"
         else:
-            text_mode = font.render(f"Status: {self.mode}", True, "white")
-
-        text_mode_rect = text_mode.get_rect(top=120)
-        text_mode_rect.left = self.status_screen.get_rect().centerx - text_mode_rect.centerx
-
-        self.status_screen.blit(text_labels, (5, 10))
-        self.status_screen.blit(text_values, (230, 10))
-        self.status_screen.blit(text_mode, text_mode_rect.topleft)
+            mode_color = "white"
+        text_mode = font.render(f"Status: {self.mode}", True, mode_color)
+        self.screen.blit(text_mode, (10, 65))
 
         # Fuel bar
+        bar_bg = pygame.rect.Rect(5, 90, 300, 12)
+        pygame.draw.rect(self.screen, "grey", bar_bg)
+        ratio = 0
+        if self.fuel_initial:
+            ratio = int(bar_bg.width * self.fuel / self.fuel_initial)
+        pygame.draw.rect(self.screen, "green", (bar_bg.left, bar_bg.top, ratio, bar_bg.height))
         if self.thrusting:
-            pygame.draw.rect(self.status_screen, (255, 140, 0), (5, 90, 290, 20))
-        pygame.draw.rect(self.status_screen, "grey", (5, 65, 290, 20))
-        ratio = int(290 * self.fuel / self.fuel_initial)
-        pygame.draw.rect(self.status_screen, "green", (5, 65, ratio, 20))
-        self.status_window.flip()
+            pygame.draw.rect(self.screen, (255, 140, 0), (bar_bg.left, bar_bg.top, ratio, bar_bg.height), 1)
 
     def move(self) -> None:
         """Integrate lander motion for one frame."""

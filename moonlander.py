@@ -48,12 +48,11 @@ class Game:
     def __init__(self) -> None:
         """Initialize the game window and objects."""
         pygame.init()
-        self.window = pygame.Window(
-            size=Settings.WINDOW.size,
-            title="MyMoonlander",
-            position=pygame.WINDOWPOS_CENTERED,
-        )
-        self.screen = self.window.get_surface()
+
+        # Classic pygame "display" API for maximum compatibility
+        self.screen = pygame.display.set_mode(Settings.WINDOW.size)
+        pygame.display.set_caption("MyMoonlander")
+
         self.clock = pygame.time.Clock()
         self.landing = True
 
@@ -79,9 +78,6 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == pygame.WINDOWCLOSE:
-                self.running = False
-                event.window.destroy()
             elif event.type == MyEvents.LANDED:
                 self.landing = False
                 self.lander.update(mode="landed", velocity=event.volocity)
@@ -119,7 +115,7 @@ class Game:
         self.lander.draw()
         if not self.landing:
             self.question.draw()
-        self.window.flip()
+        pygame.display.flip()
 
     def restart(self) -> None:
         """Reset the game state for a new run."""
@@ -127,7 +123,7 @@ class Game:
         self.background = Sky(self.screen)
         self.moon = Moon(self.screen)
         self.earth = Earth(self.screen)
-        self.lander = Lander(self.window)
+        self.lander = Lander(self.screen)
         self.question = Question(self.screen)
         self.running = True
 
