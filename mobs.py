@@ -8,7 +8,7 @@ from globals import Settings
 class Lander:
     """Lunar lander module with drawing, physics and status display."""
 
-    def __init__(self, window: pygame.window.Window) -> None:
+    def __init__(self, window: "pygame.Window") -> None:
         """Initialize the lander.
 
         Parameters
